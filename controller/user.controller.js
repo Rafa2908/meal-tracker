@@ -18,6 +18,8 @@ export const getMe = async (req, res) => {
 
     return res.status(200).json(user.rows[0]);
   } catch (error) {
+    console.error(error.message);
+
     return res.status(500).json({ message: "Internal server error" });
   }
 };

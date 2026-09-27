@@ -15,8 +15,6 @@ export const verifyToken = async (token) => {
     return payload;
   } catch (error) {
     console.error("Token verification failed:", error.name);
-
-    throw new Error("Unauthorized");
   }
 };
 
