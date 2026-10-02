@@ -1,5 +1,9 @@
 import "dotenv/config";
-import { Pool } from "pg";
+import { Pool, types } from "pg";
+
+// OID 1700 = NUMERIC; pg returns it as a string by default to avoid
+// precision loss, but our macro columns are small enough to use as numbers.
+types.setTypeParser(1700, (value) => parseFloat(value));
 
 const isTest = process.env.NODE_ENV === "test";
 

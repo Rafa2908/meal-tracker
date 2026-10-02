@@ -41,8 +41,33 @@ describe("POST /api/foods/add", () => {
       image: "foods/6b1d01c2-ebc5-4067-a78c-448c1225e188.jpg",
     });
 
+    const getFood = await pool.query(`
+            SELECT id,
+              name,  
+              calories_per_100g,
+              protein_per_100g,
+              fat_per_100g,
+              carbs_per_100g,
+              fiber_per_100g,
+              image_url
+            FROM foods
+      `);
+
+    const food = getFood.rows[0];
+
     expect(res.statusCode).toBe(201);
     expect(res.body.message).toBe("New food added");
+    expect(food).toEqual({
+      id: 1,
+      name: "Chicken Breast",
+      calories_per_100g: 165,
+      protein_per_100g: 31,
+      fat_per_100g: 3.6,
+      carbs_per_100g: 0,
+      fiber_per_100g: 0,
+      image_url:
+        "https://meal-tracker-food-images.s3.us-east-2.amazonaws.com/foods/6b1d01c2-ebc5-4067-a78c-448c1225e188.jpg",
+    });
   });
 
   it("Returns 400 status on empty food data entry", async () => {
@@ -105,5 +130,32 @@ describe("POST /api/foods/add", () => {
 
     expect(res.statusCode).toBe(400);
     expect(res.body.message).toBe("Please provide a valid food name");
+  });
+});
+
+describe("POST /api/foods/upload-url", () => {
+  it("Returns 400 on unsupported image type", async () => {
+    const res = await request(app).post("/api/foods/upload-url").send({
+      contentType: "image/avif",
+    });
+
+    expect(res.statusCode).toBe(400);
+    expect(res.body.message).toBe("Unsupported image type");
+  });
+
+  it("Returns 200 on successful request", async () => {
+    const res = await request(app).post("/api/foods/upload-url").send({
+      contentType: "image/png",
+    });
+
+    expect(res.statusCode).toBe(200);
+    expect(res.body.key).toMatch(
+      /^foods\/[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}\.png$/,
+    );
+    expect(res.body.uploadUrl).toEqual(
+      expect.stringContaining(
+        `${process.env.S3_BUCKET_NAME}.s3.${process.env.AWS_REGION}.amazonaws.com`,
+      ),
+    );
   });
 });
