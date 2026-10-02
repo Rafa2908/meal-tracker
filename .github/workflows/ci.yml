@@ -46,11 +46,7 @@ jobs:
       - name: Run tests
         run: npm test
         env:
-          TEST_PG_USER: postgres
-          TEST_PG_HOST: localhost
-          TEST_PG_PASSWORD: postgres
-          TEST_PG_DB: test_db
-          TEST_PG_PORT: 5432
-          JWT_ACCESS_SECRET: dd093849-53ed-4dd1-bde6-0ccef74904f7
-          JWT_REFRESH_SECRET: b7a2090c-2bc1-41fb-aa28-0710997a8131
+          TEST_DB_URL: postgresql://postgres:postgres@localhost:5432/test_db
+          USER_POOL_ID: us-east-1_dummyPool1
+          COGNITO_CLIENT_ID: dummy-client-id
 
