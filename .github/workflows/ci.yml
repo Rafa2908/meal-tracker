@@ -49,4 +49,8 @@ jobs:
           TEST_DB_URL: postgresql://postgres:postgres@localhost:5432/test_db
           USER_POOL_ID: us-east-1_dummyPool1
           COGNITO_CLIENT_ID: dummy-client-id
+          AWS_REGION: ${{secrets.AWS_REGION}}
+          S3_BUCKET_NAME: ${{secrets.S3_BUCKET_NAME}}
+          AWS_ACCESS_KEY_ID: ${{secrets.AWS_ACCESS_KEY_ID}}
+          AWS_SECRET_ACCESS_KEY: ${{secrets.AWS_SECRET_ACCESS_KEY}}
 
