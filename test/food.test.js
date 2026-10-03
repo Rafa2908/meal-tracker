@@ -65,8 +65,7 @@ describe("POST /api/foods/add", () => {
       fat_per_100g: 3.6,
       carbs_per_100g: 0,
       fiber_per_100g: 0,
-      image_url:
-        "https://meal-tracker-food-images.s3.us-east-2.amazonaws.com/foods/6b1d01c2-ebc5-4067-a78c-448c1225e188.jpg",
+      image_url: `https://${process.env.S3_BUCKET_NAME}.s3.${process.env.AWS_REGION}.amazonaws.com/foods/6b1d01c2-ebc5-4067-a78c-448c1225e188.jpg`,
     });
   });
 
