@@ -42,7 +42,11 @@ export const authenticate = async (req, res, next) => {
       return res.status(401).json({ message: "Unauthorized" });
     }
 
-    req.user = { id: user.rows[0].id, cognitoId: payload.sub };
+    req.user = {
+      id: user.rows[0].id,
+      cognitoId: payload.sub,
+      role: payload["cognito:groups"] || [],
+    };
 
     next();
   } catch (error) {
