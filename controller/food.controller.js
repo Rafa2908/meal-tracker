@@ -124,3 +124,27 @@ export const insertFood = async (req, res, next) => {
     next(error);
   }
 };
+
+export const getAllFoods = async (req, res, next) => {
+  const { currentPage } = req.query;
+  try {
+    const foods = await pool.query(
+      `
+      SELECT id, name, 
+      calories_per_100g, 
+      protein_per_100g,
+      fat_per_100g, carbs_per_100g, 
+      fiber_per_100g, image_url
+      FROM foods
+      LIMIT 12 OFFSET (12 * ($1 -1))
+      `,
+      [currentPage],
+    );
+
+    return res
+      .status(200)
+      .json({ foods: foods.rowCount === 0 ? [] : foods.rows });
+  } catch (error) {
+    next(error);
+  }
+};

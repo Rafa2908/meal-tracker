@@ -184,24 +184,22 @@ describe("POST /api/foods/add", () => {
     expect(res.body.message).toBe("Please provide a valid food name");
   });
 
-  it("Return 401 on unathorized users adding food", async () => {
-    await request(app).post("/api/auth/login").send({
-      email: "ikicks.sti@gmail.com",
-      password: "Test123$",
-    });
+  it("Return 403 on unauthorized users adding food", async () => {
+    const res = await request(app)
+      .post("/api/foods/add")
+      .set("Authorization", `Bearer ${USER_TOKEN}`)
+      .send({
+        name: "White Rice",
+        calories_per_100g: 130,
+        protein_per_100g: 2.7,
+        fat_per_100g: 0.3,
+        carbs_per_100g: 28.2,
+        fiber_per_100g: 0.4,
+        image: "foods/7b1d01c2-ebc5-4067-a78c-448c1225e188.jpg",
+      });
 
-    const res = await request(app).post("/api/foods/add").send({
-      name: "White Rice",
-      calories_per_100g: 130,
-      protein_per_100g: 2.7,
-      fat_per_100g: 0.3,
-      carbs_per_100g: 28.2,
-      fiber_per_100g: 0.4,
-      image: "foods/7b1d01c2-ebc5-4067-a78c-448c1225e188.jpg",
-    });
-
-    expect(res.statusCode).toBe(401);
-    expect(res.body.message).toBe("Unauthorized");
+    expect(res.statusCode).toBe(403);
+    expect(res.body.message).toBe("Not permitted. Admin only");
   });
 });
 
@@ -235,5 +233,45 @@ describe("POST /api/foods/upload-url", () => {
         `${process.env.S3_BUCKET_NAME}.s3.${process.env.AWS_REGION}.amazonaws.com`,
       ),
     );
+  });
+});
+
+describe("GET /api/foods/all", () => {
+  it("Returns 200 status and foods on successful query ", async () => {
+    await request(app)
+      .post("/api/foods/add")
+      .set("Authorization", `Bearer ${ADMIN_TOKEN}`)
+      .send({
+        name: "White Rice",
+        calories_per_100g: 130,
+        protein_per_100g: 2.7,
+        fat_per_100g: 0.3,
+        carbs_per_100g: 28.2,
+        fiber_per_100g: 0.4,
+        image: "foods/7b1d01c2-ebc5-4067-a78c-448c1225e188.jpg",
+      });
+
+    const res = await request(app).get("/api/foods/all");
+
+    expect(res.statusCode).toBe(200);
+    expect(res.body.foods).toEqual([
+      {
+        id: 1,
+        name: "White Rice",
+        calories_per_100g: 130,
+        protein_per_100g: 2.7,
+        fat_per_100g: 0.3,
+        carbs_per_100g: 28.2,
+        fiber_per_100g: 0.4,
+        image_url: `https://${process.env.S3_BUCKET_NAME}.s3.${process.env.AWS_REGION}.amazonaws.com/foods/7b1d01c2-ebc5-4067-a78c-448c1225e188.jpg`,
+      },
+    ]);
+  });
+
+  it("Returns 200 status and empty array on successful query if no food in database", async () => {
+    const res = await request(app).get("/api/foods/all");
+
+    expect(res.statusCode).toBe(200);
+    expect(res.body.foods).toEqual([]);
   });
 });
