@@ -251,7 +251,7 @@ describe("GET /api/foods/all", () => {
         image: "foods/7b1d01c2-ebc5-4067-a78c-448c1225e188.jpg",
       });
 
-    const res = await request(app).get("/api/foods/all");
+    const res = await request(app).get("/api/foods/all?currentPage=1");
 
     expect(res.statusCode).toBe(200);
     expect(res.body.foods).toEqual([
@@ -269,9 +269,219 @@ describe("GET /api/foods/all", () => {
   });
 
   it("Returns 200 status and empty array on successful query if no food in database", async () => {
-    const res = await request(app).get("/api/foods/all");
+    const res = await request(app).get("/api/foods/all?currentPage=1");
 
     expect(res.statusCode).toBe(200);
     expect(res.body.foods).toEqual([]);
+  });
+
+  it("Returns 400 on invalid page number", async () => {
+    await request(app)
+      .post("/api/foods/add")
+      .set("Authorization", `Bearer ${ADMIN_TOKEN}`)
+      .send({
+        name: "White Rice",
+        calories_per_100g: 130,
+        protein_per_100g: 2.7,
+        fat_per_100g: 0.3,
+        carbs_per_100g: 28.2,
+        fiber_per_100g: 0.4,
+        image: "foods/7b1d01c2-ebc5-4067-a78c-448c1225e188.jpg",
+      });
+
+    const res = await request(app).get("/api/foods/all?currentPage=abf");
+
+    expect(res.statusCode).toBe(400);
+    expect(res.body.message).toBe("Invalid page number");
+  });
+
+  it("Returns 400 on empty current page query", async () => {
+    await request(app)
+      .post("/api/foods/add")
+      .set("Authorization", `Bearer ${ADMIN_TOKEN}`)
+      .send({
+        name: "White Rice",
+        calories_per_100g: 130,
+        protein_per_100g: 2.7,
+        fat_per_100g: 0.3,
+        carbs_per_100g: 28.2,
+        fiber_per_100g: 0.4,
+        image: "foods/7b1d01c2-ebc5-4067-a78c-448c1225e188.jpg",
+      });
+
+    const res = await request(app).get("/api/foods/all?currentPage=");
+
+    expect(res.statusCode).toBe(400);
+    expect(res.body.message).toBe("No page number provided");
+  });
+
+  it("Returns 400 on page number zero provided", async () => {
+    await request(app)
+      .post("/api/foods/add")
+      .set("Authorization", `Bearer ${ADMIN_TOKEN}`)
+      .send({
+        name: "White Rice",
+        calories_per_100g: 130,
+        protein_per_100g: 2.7,
+        fat_per_100g: 0.3,
+        carbs_per_100g: 28.2,
+        fiber_per_100g: 0.4,
+        image: "foods/7b1d01c2-ebc5-4067-a78c-448c1225e188.jpg",
+      });
+
+    const res = await request(app).get("/api/foods/all?currentPage=0");
+
+    expect(res.statusCode).toBe(400);
+    expect(res.body.message).toBe("Page number cannot be 0 or negative");
+  });
+
+  it("Returns 400 on decimal page number provided", async () => {
+    await request(app)
+      .post("/api/foods/add")
+      .set("Authorization", `Bearer ${ADMIN_TOKEN}`)
+      .send({
+        name: "White Rice",
+        calories_per_100g: 130,
+        protein_per_100g: 2.7,
+        fat_per_100g: 0.3,
+        carbs_per_100g: 28.2,
+        fiber_per_100g: 0.4,
+        image: "foods/7b1d01c2-ebc5-4067-a78c-448c1225e188.jpg",
+      });
+
+    const res = await request(app).get("/api/foods/all?currentPage=1.5");
+
+    expect(res.statusCode).toBe(400);
+    expect(res.body.message).toBe("Page cannot be a decimal");
+  });
+
+  it("Returns 400 on negative page number provided", async () => {
+    await request(app)
+      .post("/api/foods/add")
+      .set("Authorization", `Bearer ${ADMIN_TOKEN}`)
+      .send({
+        name: "White Rice",
+        calories_per_100g: 130,
+        protein_per_100g: 2.7,
+        fat_per_100g: 0.3,
+        carbs_per_100g: 28.2,
+        fiber_per_100g: 0.4,
+        image: "foods/7b1d01c2-ebc5-4067-a78c-448c1225e188.jpg",
+      });
+
+    const res = await request(app).get("/api/foods/all?currentPage=-2");
+
+    expect(res.statusCode).toBe(400);
+    expect(res.body.message).toBe("Page number cannot be 0 or negative");
+  });
+});
+
+describe("GET /api/foods/:foodId", () => {
+  it("Returns 200 on successful query by food id", async () => {
+    await request(app)
+      .post("/api/foods/add")
+      .set("Authorization", `Bearer ${ADMIN_TOKEN}`)
+      .send({
+        name: "White Rice",
+        calories_per_100g: 130,
+        protein_per_100g: 2.7,
+        fat_per_100g: 0.3,
+        carbs_per_100g: 28.2,
+        fiber_per_100g: 0.4,
+        image: "foods/7b1d01c2-ebc5-4067-a78c-448c1225e188.jpg",
+      });
+
+    const res = await request(app).get("/api/foods/1");
+
+    expect(res.statusCode).toBe(200);
+    expect(res.body).toEqual({
+      name: "White Rice",
+      calories_per_100g: 130,
+      protein_per_100g: 2.7,
+      fat_per_100g: 0.3,
+      carbs_per_100g: 28.2,
+      fiber_per_100g: 0.4,
+      image_url: `https://${process.env.S3_BUCKET_NAME}.s3.${process.env.AWS_REGION}.amazonaws.com/foods/7b1d01c2-ebc5-4067-a78c-448c1225e188.jpg`,
+    });
+  });
+
+  it("Returns 400 on non-numeric food id provided", async () => {
+    await request(app)
+      .post("/api/foods/add")
+      .set("Authorization", `Bearer ${ADMIN_TOKEN}`)
+      .send({
+        name: "White Rice",
+        calories_per_100g: 130,
+        protein_per_100g: 2.7,
+        fat_per_100g: 0.3,
+        carbs_per_100g: 28.2,
+        fiber_per_100g: 0.4,
+        image: "foods/7b1d01c2-ebc5-4067-a78c-448c1225e188.jpg",
+      });
+
+    const res = await request(app).get("/api/foods/abf");
+
+    expect(res.statusCode).toBe(400);
+    expect(res.body.message).toBe("Invalid food id");
+  });
+
+  it("Returns 400 on decimal food id provided", async () => {
+    await request(app)
+      .post("/api/foods/add")
+      .set("Authorization", `Bearer ${ADMIN_TOKEN}`)
+      .send({
+        name: "White Rice",
+        calories_per_100g: 130,
+        protein_per_100g: 2.7,
+        fat_per_100g: 0.3,
+        carbs_per_100g: 28.2,
+        fiber_per_100g: 0.4,
+        image: "foods/7b1d01c2-ebc5-4067-a78c-448c1225e188.jpg",
+      });
+
+    const res = await request(app).get("/api/foods/1.5");
+
+    expect(res.statusCode).toBe(400);
+    expect(res.body.message).toBe("Invalid food id");
+  });
+
+  it("Returns 400 on negative food id provided", async () => {
+    await request(app)
+      .post("/api/foods/add")
+      .set("Authorization", `Bearer ${ADMIN_TOKEN}`)
+      .send({
+        name: "White Rice",
+        calories_per_100g: 130,
+        protein_per_100g: 2.7,
+        fat_per_100g: 0.3,
+        carbs_per_100g: 28.2,
+        fiber_per_100g: 0.4,
+        image: "foods/7b1d01c2-ebc5-4067-a78c-448c1225e188.jpg",
+      });
+
+    const res = await request(app).get("/api/foods/-4");
+
+    expect(res.statusCode).toBe(400);
+    expect(res.body.message).toBe("Invalid food id");
+  });
+
+  it("Returns 400 on number zero as food id provided", async () => {
+    await request(app)
+      .post("/api/foods/add")
+      .set("Authorization", `Bearer ${ADMIN_TOKEN}`)
+      .send({
+        name: "White Rice",
+        calories_per_100g: 130,
+        protein_per_100g: 2.7,
+        fat_per_100g: 0.3,
+        carbs_per_100g: 28.2,
+        fiber_per_100g: 0.4,
+        image: "foods/7b1d01c2-ebc5-4067-a78c-448c1225e188.jpg",
+      });
+
+    const res = await request(app).get("/api/foods/0");
+
+    expect(res.statusCode).toBe(400);
+    expect(res.body.message).toBe("Invalid food id");
   });
 });

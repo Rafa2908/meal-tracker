@@ -1,6 +1,7 @@
 import { Router } from "express";
 import {
   getAllFoods,
+  getFoodById,
   getFoodImageUploadUrl,
   insertFood,
 } from "../controller/food.controller.js";
@@ -12,3 +13,4 @@ export const foodRouter = Router();
 foodRouter.route("/upload-url").post(authenticate, getFoodImageUploadUrl);
 foodRouter.route("/add").post(authenticate, authenticateAdmin, insertFood);
 foodRouter.route("/all").get(getAllFoods);
+foodRouter.route("/:foodId").get(getFoodById);

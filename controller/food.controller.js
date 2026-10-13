@@ -128,6 +128,24 @@ export const insertFood = async (req, res, next) => {
 export const getAllFoods = async (req, res, next) => {
   const { currentPage } = req.query;
   try {
+    if (!currentPage) {
+      return res.status(400).json({ message: "No page number provided" });
+    }
+
+    if (isNaN(currentPage)) {
+      return res.status(400).json({ message: "Invalid page number" });
+    }
+
+    if (Number(currentPage) < 1) {
+      return res
+        .status(400)
+        .json({ message: "Page number cannot be 0 or negative" });
+    }
+
+    if (currentPage % 1 !== 0) {
+      return res.status(400).json({ message: "Page cannot be a decimal" });
+    }
+
     const foods = await pool.query(
       `
       SELECT id, name, 
@@ -144,6 +162,45 @@ export const getAllFoods = async (req, res, next) => {
     return res
       .status(200)
       .json({ foods: foods.rowCount === 0 ? [] : foods.rows });
+  } catch (error) {
+    next(error);
+  }
+};
+
+export const getFoodById = async (req, res, next) => {
+  const { foodId } = req.params;
+
+  try {
+
+    if (isNaN(foodId)) {
+      return res.status(400).json({ message: "Invalid food id" });
+    }
+
+    if (foodId % 1 !== 0) {
+      return res.status(400).json({ message: "Invalid food id" });
+    }
+
+    if (foodId < 1) {
+      return res.status(400).json({ message: "Invalid food id" });
+    }
+
+    const food = await pool.query(
+      `
+      SELECT name, calories_per_100g, 
+      protein_per_100g, fat_per_100g,
+      carbs_per_100g, fiber_per_100g,
+      image_url
+      FROM foods
+      WHERE id=$1
+      `,
+      [foodId],
+    );
+
+    if (food.rowCount === 0) {
+      return res.status(404).json({ message: "Food not found" });
+    }
+
+    return res.status(200).json(food.rows[0]);
   } catch (error) {
     next(error);
   }
