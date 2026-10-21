@@ -3,7 +3,7 @@ const regex = {
 };
 
 export const nameValidator = (name) => {
-  return regex.name.test(name.trim());
+  return regex.name.test(name?.trim());
 };
 
 export const NotNumberSanitizer = (macros) => {

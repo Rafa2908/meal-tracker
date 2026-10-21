@@ -405,6 +405,26 @@ describe("GET /api/foods/:foodId", () => {
     });
   });
 
+  it("Returns 404 on non found food data by id", async () => {
+    await request(app)
+      .post("/api/foods/add")
+      .set("Authorization", `Bearer ${ADMIN_TOKEN}`)
+      .send({
+        name: "White Rice",
+        calories_per_100g: 130,
+        protein_per_100g: 2.7,
+        fat_per_100g: 0.3,
+        carbs_per_100g: 28.2,
+        fiber_per_100g: 0.4,
+        image: "foods/7b1d01c2-ebc5-4067-a78c-448c1225e188.jpg",
+      });
+
+    const res = await request(app).get("/api/foods/2");
+
+    expect(res.statusCode).toBe(404);
+    expect(res.body.message).toBe("Food not found");
+  });
+
   it("Returns 400 on non-numeric food id provided", async () => {
     await request(app)
       .post("/api/foods/add")
