@@ -334,4 +334,37 @@ export const updateFoodById = async (req, res, next) => {
   }
 };
 
-// export const deleteFoodById = async (req, res, next) => {};
+export const deleteFoodById = async (req, res, next) => {
+  const { foodId } = req.params;
+
+  try {
+    if (isNaN(foodId)) {
+      return res.status(400).json({ message: "Invalid food id provided" });
+    }
+
+    if (foodId % 1 !== 0) {
+      return res.status(400).json({ message: "Invalid food id provided" });
+    }
+
+    if (foodId <= 0) {
+      return res.status(400).json({ message: "Invalid food id provided" });
+    }
+
+    const food = await pool.query(
+      `
+      DELETE FROM foods
+      WHERE id=$1
+      RETURNING id
+      `,
+      [foodId],
+    );
+
+    if (food.rowCount === 0) {
+      return res.status(404).json({ message: "Food not found" });
+    }
+
+    return res.status(200).json({ message: "Food deleted sucessfully" });
+  } catch (error) {
+    next(error);
+  }
+};

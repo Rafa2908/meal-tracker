@@ -1,5 +1,6 @@
 import { Router } from "express";
 import {
+  deleteFoodById,
   getAllFoods,
   getFoodById,
   getFoodImageUploadUrl,
@@ -18,3 +19,6 @@ foodRouter.route("/:foodId").get(getFoodById);
 foodRouter
   .route("/update/:foodId")
   .patch(authenticate, authenticateAdmin, updateFoodById);
+foodRouter
+  .route("/delete/:foodId")
+  .delete(authenticate, authenticateAdmin, deleteFoodById);
