@@ -334,4 +334,4 @@ export const updateFoodById = async (req, res, next) => {
   }
 };
 
-export const deleteFoodById = async (req, res, next) => {};
+// export const deleteFoodById = async (req, res, next) => {};

@@ -505,3 +505,221 @@ describe("GET /api/foods/:foodId", () => {
     expect(res.body.message).toBe("Invalid food id");
   });
 });
+
+describe("PATCH /api/foods/update/:foodId", () => {
+  it("Return 400 if foodId is not valid", async () => {
+    await request(app)
+      .post("/api/foods/add")
+      .set("Authorization", `Bearer ${ADMIN_TOKEN}`)
+      .send({
+        name: "White Rice",
+        calories_per_100g: 130,
+        protein_per_100g: 2.7,
+        fat_per_100g: 0.3,
+        carbs_per_100g: 28.2,
+        fiber_per_100g: 0.4,
+        image: "foods/7b1d01c2-ebc5-4067-a78c-448c1225e188.jpg",
+      });
+
+    const res = await request(app)
+      .patch("/api/foods/update/abc")
+      .set("Authorization", `Bearer ${ADMIN_TOKEN}`)
+      .send({
+        name: "Arroz Blanco",
+      });
+
+    expect(res.statusCode).toBe(400);
+    expect(res.body.message).toBe("Invalid food id provided");
+  });
+
+  it("Return 400 if foodId is decimal", async () => {
+    await request(app)
+      .post("/api/foods/add")
+      .set("Authorization", `Bearer ${ADMIN_TOKEN}`)
+      .send({
+        name: "White Rice",
+        calories_per_100g: 130,
+        protein_per_100g: 2.7,
+        fat_per_100g: 0.3,
+        carbs_per_100g: 28.2,
+        fiber_per_100g: 0.4,
+        image: "foods/7b1d01c2-ebc5-4067-a78c-448c1225e188.jpg",
+      });
+
+    const res = await request(app)
+      .patch("/api/foods/update/1.5")
+      .set("Authorization", `Bearer ${ADMIN_TOKEN}`)
+      .send({
+        name: "Arroz Blanco",
+      });
+
+    expect(res.statusCode).toBe(400);
+    expect(res.body.message).toBe("Invalid food id provided");
+  });
+
+  it("Return 400 if foodId is negative", async () => {
+    await request(app)
+      .post("/api/foods/add")
+      .set("Authorization", `Bearer ${ADMIN_TOKEN}`)
+      .send({
+        name: "White Rice",
+        calories_per_100g: 130,
+        protein_per_100g: 2.7,
+        fat_per_100g: 0.3,
+        carbs_per_100g: 28.2,
+        fiber_per_100g: 0.4,
+        image: "foods/7b1d01c2-ebc5-4067-a78c-448c1225e188.jpg",
+      });
+
+    const res = await request(app)
+      .patch("/api/foods/update/-1")
+      .set("Authorization", `Bearer ${ADMIN_TOKEN}`)
+      .send({
+        name: "Arroz Blanco",
+      });
+
+    expect(res.statusCode).toBe(400);
+    expect(res.body.message).toBe("Invalid food id provided");
+  });
+
+  it("Return 404 if food doesn't exist", async () => {
+    await request(app)
+      .post("/api/foods/add")
+      .set("Authorization", `Bearer ${ADMIN_TOKEN}`)
+      .send({
+        name: "White Rice",
+        calories_per_100g: 130,
+        protein_per_100g: 2.7,
+        fat_per_100g: 0.3,
+        carbs_per_100g: 28.2,
+        fiber_per_100g: 0.4,
+        image: "foods/7b1d01c2-ebc5-4067-a78c-448c1225e188.jpg",
+      });
+
+    const res = await request(app)
+      .patch("/api/foods/update/2")
+      .set("Authorization", `Bearer ${ADMIN_TOKEN}`)
+      .send({
+        name: "Arroz Blanco",
+      });
+
+    expect(res.statusCode).toBe(404);
+    expect(res.body.message).toBe("No food data found");
+  });
+
+  it("Return 400 if new food name is invalid", async () => {
+    await request(app)
+      .post("/api/foods/add")
+      .set("Authorization", `Bearer ${ADMIN_TOKEN}`)
+      .send({
+        name: "White Rice",
+        calories_per_100g: 130,
+        protein_per_100g: 2.7,
+        fat_per_100g: 0.3,
+        carbs_per_100g: 28.2,
+        fiber_per_100g: 0.4,
+        image: "foods/7b1d01c2-ebc5-4067-a78c-448c1225e188.jpg",
+      });
+
+    const res = await request(app)
+      .patch("/api/foods/update/1")
+      .set("Authorization", `Bearer ${ADMIN_TOKEN}`)
+      .send({
+        name: "Arroz$# Blanco",
+      });
+
+    expect(res.statusCode).toBe(400);
+    expect(res.body.message).toBe("Invalid food name provided");
+  });
+
+  it("Return 400 if macros are not numbers", async () => {
+    await request(app)
+      .post("/api/foods/add")
+      .set("Authorization", `Bearer ${ADMIN_TOKEN}`)
+      .send({
+        name: "White Rice",
+        calories_per_100g: 130,
+        protein_per_100g: 2.7,
+        fat_per_100g: 0.3,
+        carbs_per_100g: 28.2,
+        fiber_per_100g: 0.4,
+        image: "foods/7b1d01c2-ebc5-4067-a78c-448c1225e188.jpg",
+      });
+
+    const res = await request(app)
+      .patch("/api/foods/update/1")
+      .set("Authorization", `Bearer ${ADMIN_TOKEN}`)
+      .send({
+        calories_per_100g: "abf",
+      });
+
+    expect(res.statusCode).toBe(400);
+    expect(res.body.message).toBe(
+      "Please provide a numerical value for macros",
+    );
+  });
+
+  it("Return 400 if macros are negative", async () => {
+    await request(app)
+      .post("/api/foods/add")
+      .set("Authorization", `Bearer ${ADMIN_TOKEN}`)
+      .send({
+        name: "White Rice",
+        calories_per_100g: 130,
+        protein_per_100g: 2.7,
+        fat_per_100g: 0.3,
+        carbs_per_100g: 28.2,
+        fiber_per_100g: 0.4,
+        image: "foods/7b1d01c2-ebc5-4067-a78c-448c1225e188.jpg",
+      });
+
+    const res = await request(app)
+      .patch("/api/foods/update/1")
+      .set("Authorization", `Bearer ${ADMIN_TOKEN}`)
+      .send({
+        calories_per_100g: -10,
+      });
+
+    expect(res.statusCode).toBe(400);
+    expect(res.body.message).toBe("Macros cannot be negative");
+  });
+
+  it("Return 200 on successful food data update", async () => {
+    await request(app)
+      .post("/api/foods/add")
+      .set("Authorization", `Bearer ${ADMIN_TOKEN}`)
+      .send({
+        name: "White Rice",
+        calories_per_100g: 130,
+        protein_per_100g: 2.7,
+        fat_per_100g: 0.3,
+        carbs_per_100g: 28.2,
+        fiber_per_100g: 0.4,
+        image: "foods/7b1d01c2-ebc5-4067-a78c-448c1225e188.jpg",
+      });
+
+    const res = await request(app)
+      .patch("/api/foods/update/1")
+      .set("Authorization", `Bearer ${ADMIN_TOKEN}`)
+      .send({
+        name: "Arroz Blanco",
+      });
+
+    expect(res.statusCode).toBe(200);
+    expect(res.body.message).toBe("Food data updated");
+
+    const isFoodUpdated = await pool.query(
+      `SELECT name, calories_per_100g, protein_per_100g, fat_per_100g, carbs_per_100g, fiber_per_100g, image_url FROM foods WHERE id=1`,
+    );
+
+    expect(isFoodUpdated.rows[0]).toEqual({
+      name: "Arroz Blanco",
+      calories_per_100g: 130,
+      protein_per_100g: 2.7,
+      fat_per_100g: 0.3,
+      carbs_per_100g: 28.2,
+      fiber_per_100g: 0.4,
+      image_url: `https://${process.env.S3_BUCKET_NAME}.s3.${process.env.AWS_REGION}.amazonaws.com/foods/7b1d01c2-ebc5-4067-a78c-448c1225e188.jpg`,
+    });
+  });
+});
