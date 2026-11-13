@@ -4,6 +4,7 @@ import { userRouter } from "./routes/user.routes.js";
 import { healthRouter } from "./routes/health.routes.js";
 import { errorMiddleware } from "./middleware/error.middleware.js";
 import { foodRouter } from "./routes/food.routes.js";
+import { myFoodRouter } from "./routes/myFoods.routes.js";
 
 export const app = express();
 
@@ -13,4 +14,5 @@ app.use("/api/health", healthRouter);
 app.use("/api/auth", authRouter);
 app.use("/api/users", userRouter);
 app.use("/api/foods", foodRouter);
+app.use("/api/myfoods", myFoodRouter);
 app.use(errorMiddleware);
