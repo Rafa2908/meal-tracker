@@ -1,11 +1,11 @@
 import { app } from "../app.js";
 import { pool } from "../config/database.js";
+import { resetDatabase, seedUsers } from "./helpers/db.js";
 import request from "supertest";
 
 const ADMIN_TOKEN = "admin-token";
 const USER_TOKEN = "user-token";
 
-// eslint-disable-next-line no-undef
 jest.mock("aws-jwt-verify", () => ({
   CognitoJwtVerifier: {
     create: () => ({
@@ -22,50 +22,12 @@ jest.mock("aws-jwt-verify", () => ({
   },
 }));
 
-// eslint-disable-next-line no-undef
-beforeAll(async () => {
-  await pool.query(`
-    CREATE TABLE IF NOT EXISTS foods(
-        id SERIAL PRIMARY KEY,
-        name VARCHAR(255) NOT NULL,
-        calories_per_100g NUMERIC(6,2) NOT NULL,
-        protein_per_100g NUMERIC(6,2) NOT NULL,
-        fat_per_100g NUMERIC(6,2) NOT NULL,
-        carbs_per_100g NUMERIC(6,2) NOT NULL,
-        fiber_per_100g NUMERIC(6,2) NOT NULL,
-        image_url VARCHAR(500),
-        created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP
-      ) 
-    `);
-
-  await pool.query(`
-    CREATE TABLE IF NOT EXISTS users(
-      id SERIAL PRIMARY KEY,
-      cognito_id VARCHAR(255) NOT NULL UNIQUE,
-      first_name VARCHAR(50) NOT NULL,
-      last_name VARCHAR(50) NOT NULL,
-      email VARCHAR(255) NOT NULL UNIQUE
-    )
-  `);
-
-  await pool.query(`
-    INSERT INTO users(cognito_id, first_name, last_name, email)
-    VALUES
-      ('admin-sub', 'Admin', 'Test', 'admin@test.com'),
-      ('user-sub', 'User', 'Test', 'user@test.com')
-  `);
-});
-
 beforeEach(async () => {
-  await pool.query("TRUNCATE TABLE foods RESTART IDENTITY CASCADE");
+  await resetDatabase();
+  await seedUsers();
 });
 
-// eslint-disable-next-line no-undef
-afterAll(async () => {
-  await pool.query("DROP TABLE IF EXISTS foods CASCADE");
-  await pool.query("DROP TABLE IF EXISTS users CASCADE");
-  await pool.end();
-});
+afterAll(() => pool.end());
 
 describe("POST /api/foods/add", () => {
   it("Returns 201 status upon successfully adding food to database", async () => {
@@ -125,7 +87,7 @@ describe("POST /api/foods/add", () => {
       });
 
     expect(res.statusCode).toBe(400);
-    expect(res.body.message).toBe("No food data provided");
+    expect(res.body.message).toBe("Please provide a valid food name");
   });
 
   it("Returns 400 status on negative macros data", async () => {
@@ -143,7 +105,7 @@ describe("POST /api/foods/add", () => {
       });
 
     expect(res.statusCode).toBe(400);
-    expect(res.body.message).toBe("Macro values cannot be negative");
+    expect(res.body.message).toBe("calories_per_100g must be between 0 and 9999.99");
   });
 
   it("Returns 400 status on non numeric macros data", async () => {
@@ -162,7 +124,7 @@ describe("POST /api/foods/add", () => {
 
     expect(res.statusCode).toBe(400);
     expect(res.body.message).toBe(
-      "Please provide a numerical value for macros",
+      "calories_per_100g must be a number",
     );
   });
 
@@ -201,9 +163,47 @@ describe("POST /api/foods/add", () => {
     expect(res.statusCode).toBe(403);
     expect(res.body.message).toBe("Not permitted. Admin only");
   });
+
+  it("Returns 400 when the image key is outside the catalog folder", async () => {
+    const res = await request(app)
+      .post("/api/foods/add")
+      .set("Authorization", `Bearer ${ADMIN_TOKEN}`)
+      .send({
+        name: "White Rice",
+        calories_per_100g: 130,
+        protein_per_100g: 2.7,
+        fat_per_100g: 0.3,
+        carbs_per_100g: 28.2,
+        fiber_per_100g: 0.4,
+        image: "myfood/2/7b1d01c2-ebc5-4067-a78c-448c1225e188.jpg",
+      });
+
+    expect(res.statusCode).toBe(400);
+    expect(res.body.message).toBe("Invalid image key");
+  });
+
+  it("Returns 401 when the token cannot be verified", async () => {
+    const res = await request(app)
+      .post("/api/foods/add")
+      .set("Authorization", "Bearer fake_token")
+      .send({ name: "White Rice" });
+
+    expect(res.statusCode).toBe(401);
+    expect(res.body.message).toBe("Unauthorized");
+  });
 });
 
 describe("POST /api/foods/upload-url", () => {
+  it("Returns 403 for non-admin users", async () => {
+    const res = await request(app)
+      .post("/api/foods/upload-url")
+      .set("Authorization", `Bearer ${USER_TOKEN}`)
+      .send({ contentType: "image/png" });
+
+    expect(res.statusCode).toBe(403);
+    expect(res.body.message).toBe("Not permitted. Admin only");
+  });
+
   it("Returns 400 on unsupported image type", async () => {
     const res = await request(app)
       .post("/api/foods/upload-url")
@@ -312,7 +312,7 @@ describe("GET /api/foods/all", () => {
     const res = await request(app).get("/api/foods/all?currentPage=");
 
     expect(res.statusCode).toBe(400);
-    expect(res.body.message).toBe("No page number provided");
+    expect(res.body.message).toBe("Invalid page number");
   });
 
   it("Returns 400 on page number zero provided", async () => {
@@ -332,7 +332,7 @@ describe("GET /api/foods/all", () => {
     const res = await request(app).get("/api/foods/all?currentPage=0");
 
     expect(res.statusCode).toBe(400);
-    expect(res.body.message).toBe("Page number cannot be 0 or negative");
+    expect(res.body.message).toBe("Invalid page number");
   });
 
   it("Returns 400 on decimal page number provided", async () => {
@@ -352,7 +352,7 @@ describe("GET /api/foods/all", () => {
     const res = await request(app).get("/api/foods/all?currentPage=1.5");
 
     expect(res.statusCode).toBe(400);
-    expect(res.body.message).toBe("Page cannot be a decimal");
+    expect(res.body.message).toBe("Invalid page number");
   });
 
   it("Returns 400 on negative page number provided", async () => {
@@ -372,7 +372,7 @@ describe("GET /api/foods/all", () => {
     const res = await request(app).get("/api/foods/all?currentPage=-2");
 
     expect(res.statusCode).toBe(400);
-    expect(res.body.message).toBe("Page number cannot be 0 or negative");
+    expect(res.body.message).toBe("Invalid page number");
   });
 });
 
@@ -529,7 +529,7 @@ describe("PATCH /api/foods/update/:foodId", () => {
       });
 
     expect(res.statusCode).toBe(400);
-    expect(res.body.message).toBe("Invalid food id provided");
+    expect(res.body.message).toBe("Invalid food id");
   });
 
   it("Return 400 if foodId is decimal", async () => {
@@ -554,7 +554,7 @@ describe("PATCH /api/foods/update/:foodId", () => {
       });
 
     expect(res.statusCode).toBe(400);
-    expect(res.body.message).toBe("Invalid food id provided");
+    expect(res.body.message).toBe("Invalid food id");
   });
 
   it("Return 400 if foodId is negative", async () => {
@@ -579,7 +579,7 @@ describe("PATCH /api/foods/update/:foodId", () => {
       });
 
     expect(res.statusCode).toBe(400);
-    expect(res.body.message).toBe("Invalid food id provided");
+    expect(res.body.message).toBe("Invalid food id");
   });
 
   it("Return 404 if food doesn't exist", async () => {
@@ -604,7 +604,7 @@ describe("PATCH /api/foods/update/:foodId", () => {
       });
 
     expect(res.statusCode).toBe(404);
-    expect(res.body.message).toBe("No food data found");
+    expect(res.body.message).toBe("Food not found");
   });
 
   it("Return 400 if new food name is invalid", async () => {
@@ -629,7 +629,7 @@ describe("PATCH /api/foods/update/:foodId", () => {
       });
 
     expect(res.statusCode).toBe(400);
-    expect(res.body.message).toBe("Invalid food name provided");
+    expect(res.body.message).toBe("Please provide a valid food name");
   });
 
   it("Return 400 if macros are not numbers", async () => {
@@ -655,7 +655,7 @@ describe("PATCH /api/foods/update/:foodId", () => {
 
     expect(res.statusCode).toBe(400);
     expect(res.body.message).toBe(
-      "Please provide a numerical value for macros",
+      "calories_per_100g must be a number",
     );
   });
 
@@ -681,7 +681,7 @@ describe("PATCH /api/foods/update/:foodId", () => {
       });
 
     expect(res.statusCode).toBe(400);
-    expect(res.body.message).toBe("Macros cannot be negative");
+    expect(res.body.message).toBe("calories_per_100g must be between 0 and 9999.99");
   });
 
   it("Return 200 on successful food data update", async () => {
@@ -744,7 +744,7 @@ describe("DELETE /api/foods/delete/:foodId", () => {
       .set("Authorization", `Bearer ${ADMIN_TOKEN}`);
 
     expect(res.statusCode).toBe(400);
-    expect(res.body.message).toBe("Invalid food id provided");
+    expect(res.body.message).toBe("Invalid food id");
   });
 
   it("Return 400 if foodId is decimal", async () => {
@@ -766,7 +766,7 @@ describe("DELETE /api/foods/delete/:foodId", () => {
       .set("Authorization", `Bearer ${ADMIN_TOKEN}`);
 
     expect(res.statusCode).toBe(400);
-    expect(res.body.message).toBe("Invalid food id provided");
+    expect(res.body.message).toBe("Invalid food id");
   });
 
   it("Return 400 if foodId is negative", async () => {
@@ -788,7 +788,7 @@ describe("DELETE /api/foods/delete/:foodId", () => {
       .set("Authorization", `Bearer ${ADMIN_TOKEN}`);
 
     expect(res.statusCode).toBe(400);
-    expect(res.body.message).toBe("Invalid food id provided");
+    expect(res.body.message).toBe("Invalid food id");
   });
 
   it("Return 404 if food doesn't exist", async () => {
@@ -832,6 +832,18 @@ describe("DELETE /api/foods/delete/:foodId", () => {
       .set("Authorization", `Bearer ${ADMIN_TOKEN}`);
 
     expect(res.statusCode).toBe(200);
-    expect(res.body.message).toBe("Food deleted sucessfully");
+    expect(res.body.message).toBe("Food deleted successfully");
+
+    // Soft delete: the row stays for meal history but leaves the catalog
+    const row = await pool.query("SELECT deleted_at FROM foods WHERE id=1");
+    expect(row.rows[0].deleted_at).not.toBeNull();
+
+    const afterDelete = await request(app).get("/api/foods/1");
+    expect(afterDelete.statusCode).toBe(404);
+
+    const deleteAgain = await request(app)
+      .delete("/api/foods/delete/1")
+      .set("Authorization", `Bearer ${ADMIN_TOKEN}`);
+    expect(deleteAgain.statusCode).toBe(404);
   });
 });

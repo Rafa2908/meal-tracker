@@ -1,3 +1,8 @@
 .env
 .git
+.github
 node_modules
+test
+coverage
+certs
+*.md

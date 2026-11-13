@@ -28,14 +28,26 @@ jobs:
           --health-timeout=5s
           --health-retries=5
 
+    # Tests never contact AWS: presigning is local signing and the JWT
+    # verifier is mocked. Dummy values work here, on laptops and on forks.
+    env:
+      NODE_ENV: test
+      TEST_DB_URL: postgresql://postgres:postgres@localhost:5432/test_db
+      USER_POOL_ID: us-east-1_dummyPool1
+      COGNITO_CLIENT_ID: dummy-client-id
+      AWS_REGION: us-east-1
+      S3_BUCKET_NAME: test-bucket
+      AWS_ACCESS_KEY_ID: test
+      AWS_SECRET_ACCESS_KEY: test
+
     steps:
       - name: Checkout code
         uses: actions/checkout@v5
 
-      - name: Setup Node.js 20.x
+      - name: Setup Node.js 22.x
         uses: actions/setup-node@v5
         with:
-          node-version: "20"
+          node-version: "22"
 
       - name: Install dependencies
         run: npm ci
@@ -43,14 +55,6 @@ jobs:
       - name: Run lint-check
         run: npm run lint
 
+      # `npm test` runs the migrations first through the pretest script
       - name: Run tests
         run: npm test
-        env:
-          TEST_DB_URL: postgresql://postgres:postgres@localhost:5432/test_db
-          USER_POOL_ID: us-east-1_dummyPool1
-          COGNITO_CLIENT_ID: dummy-client-id
-          AWS_REGION: ${{secrets.AWS_REGION}}
-          S3_BUCKET_NAME: ${{secrets.S3_BUCKET_NAME}}
-          AWS_ACCESS_KEY_ID: ${{secrets.AWS_ACCESS_KEY_ID}}
-          AWS_SECRET_ACCESS_KEY: ${{secrets.AWS_SECRET_ACCESS_KEY}}
-

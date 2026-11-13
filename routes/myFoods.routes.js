@@ -5,6 +5,7 @@ import {
   getMyFoodById,
   getMyFoodImageUploadUrl,
   insertMyFood,
+  updateMyFoodById,
 } from "../controller/myFood.controller.js";
 
 export const myFoodRouter = Router();
@@ -12,4 +13,5 @@ export const myFoodRouter = Router();
 myFoodRouter.route("/upload-url").post(authenticate, getMyFoodImageUploadUrl);
 myFoodRouter.route("/add").post(authenticate, insertMyFood);
 myFoodRouter.route("/all").get(authenticate, getAllMyFoods);
+myFoodRouter.route("/update/:foodId").patch(authenticate, updateMyFoodById);
 myFoodRouter.route("/:foodId").get(authenticate, getMyFoodById);

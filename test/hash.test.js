@@ -1,5 +1,5 @@
 import crypto from "crypto";
-import { generateSecretHash } from "../utils/secretHash";
+import { generateSecretHash } from "../utils/secretHash.js";
 
 const secret = (process.env.COGNITO_CLIENT_SECRET = "test-secret");
 const clientId = (process.env.COGNITO_CLIENT_ID = "test-client-id");

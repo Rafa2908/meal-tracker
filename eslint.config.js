@@ -16,13 +16,16 @@ export default [
     },
   },
   {
-    files: ["**/*.test.js"],
+    files: ["test/**/*.js"],
     languageOptions: {
       globals: {
         describe: "readonly",
         it: "readonly",
         expect: "readonly",
+        beforeAll: "readonly",
         beforeEach: "readonly",
+        afterAll: "readonly",
+        jest: "readonly",
       },
     },
   },

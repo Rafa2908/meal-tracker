@@ -1,13 +1,15 @@
 {
-  "name": "aws-expense-tracker",
+  "name": "meal-tracker",
   "version": "1.0.0",
   "main": "server.js",
   "type": "module",
   "scripts": {
-    "test": "cross-env NODE_ENV=test DOTENV_CONFIG_QUIET=true jest --runInBand"
-,
-    "start": "nodemon server.js",
-    "lint": "eslint"
+    "test": "cross-env NODE_ENV=test DOTENV_CONFIG_QUIET=true jest --runInBand",
+    "start": "node server.js",
+    "lint": "eslint .",
+    "dev": "nodemon server.js",
+    "migrate": "node scripts/migrate.js",
+    "pretest": "cross-env NODE_ENV=test DOTENV_CONFIG_QUIET=true node scripts/migrate.js"
   },
   "keywords": [],
   "author": "",
@@ -18,20 +20,26 @@
     "@aws-sdk/client-s3": "^3.1144.0",
     "@aws-sdk/s3-request-presigner": "^3.1144.0",
     "aws-jwt-verify": "^5.2.1",
-    "cors": "^2.8.6",
-    "cross-env": "^10.1.0",
     "dotenv": "^18.0.0",
     "express": "^5.2.1",
-    "pg": "^8.23.0",
-    "supertest": "^7.3.0"
+    "express-rate-limit": "^8.7.4",
+    "node-pg-migrate": "^9.0.0",
+    "pg": "^8.23.0"
   },
   "devDependencies": {
     "@babel/core": "^8.0.6",
     "@babel/preset-env": "^8.0.6",
     "@eslint/js": "^10.0.1",
     "babel-jest": "^30.5.2",
+    "cross-env": "^10.1.0",
     "eslint": "^10.11.0",
     "jest": "^30.5.2",
-    "nodemon": "^3.1.14"
+    "nodemon": "^3.1.14",
+    "supertest": "^7.3.2"
+  },
+  "jest": {
+    "setupFiles": [
+      "<rootDir>/test/helpers/env.js"
+    ]
   }
 }
